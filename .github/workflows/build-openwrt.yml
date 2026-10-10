@@ -3,10 +3,10 @@ name: Build ImmortalWrt 360 T6GS
 on:
   workflow_dispatch:
     inputs:
-      ssh:
-        description: SSH connection to Actions
+      branch:
+        description: Build Branch
         required: false
-        default: 'false'
+        default: 'master'
 
 permissions:
   contents: read
@@ -14,7 +14,7 @@ permissions:
 
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
-  REPO_BRANCH: master
+  REPO_BRANCH: ${{ github.event.inputs.branch }}
   CONFIG_FILE: .config
   DIY_P1_SH: diy-part1.sh
   DIY_P2_SH: diy-part2.sh
@@ -71,13 +71,6 @@ jobs:
         grep -qx 'CONFIG_TARGET_ramips_mt7621_DEVICE_qihoo_360t6gs=y' .config
         test "$(grep -c '^CONFIG_TARGET_ramips_mt7621_DEVICE_.*=y$' .config)" -eq 1
 
-    - name: SSH connection to Actions
-      uses: P3TERX/ssh2actions@v1.0.0
-      if: github.event.inputs.ssh == 'true'
-      env:
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-
     - name: Download packages
       run: |
         cd "$OPENWRT_PATH"
@@ -117,12 +110,3 @@ jobs:
       with:
         name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
-
-    - name: Delete workflow runs
-      uses: GitRML/delete-workflow-runs@main
-      continue-on-error: true
-      with:
-        retain_days: 1
-        keep_minimum_runs: 3
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
